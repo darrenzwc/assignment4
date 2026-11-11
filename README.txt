@@ -62,8 +62,9 @@ until kubectl get pods -A | grep kubeplus | grep Running; do echo "Waiting for K
 
    # Requirement 1.1
    # Note that we do not need to connect Docker CLI on our host to the Docker daemon inside minikube (Why?)
-   docker build -t gcr.io/<gcp-project-id>/<uteid>-assignment4:latest .
-   docker push gcr.io/<gcp-project-id>/<uteid>-assignment4:latest
+   # Build into Minikube's Docker daemon so Minikube can use the local image.
+   eval $(minikube -p minikube docker-env)
+   docker build -t dc49996-assignment4:latest .
 
    - FOR Mac with ARM processor:
       The image default using above command will be for ARM architecture.

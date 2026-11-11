@@ -1,0 +1,10 @@
+GPT-5.6 Terra Used
+AI tool used:
+ChatGPT Codex (GPT-5)
+
+Debugging prompts/questions:
+- Can you help guide me on what to do and what to change over time
+- Can you help with the code implementation
+- Tell me what commands I need to run
+- kubectl port-forward -n greetings service/greetings 8081:80 returned services "greetings" not found
+- Can you reverify everything has been done?

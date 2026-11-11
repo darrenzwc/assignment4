@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greetings
+  labels:
+    app: greetings
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: greetings
+  template:
+    metadata:
+      labels:
+        app: greetings
+    spec:
+      serviceAccountName: greetings
+      containers:
+        - name: greetings
+          image: dc49996-assignment4:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5001
+          env:
+            - name: GREETING
+              value: "Summer is here."
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: greetings-config
+              mountPath: /hostfolder
+              readOnly: true
+      volumes:
+        - name: greetings-config
+          configMap:
+            name: greetings-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: greetings
+  labels:
+    app: greetings
+spec:
+  type: NodePort
+  selector:
+    app: greetings
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5001
+      nodePort: 32767
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: greetings-config
+  labels:
+    app: greetings
+data:
+  filenames.txt: |
+    application.py
+    Dockerfile
+    requirements.txt
+    greetings.yaml
+    prometheus.yml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: greetings
+  labels:
+    app: greetings
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: greetings-reader-role
+  labels:
+    app: greetings
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "configmaps", "serviceaccounts"]
+    verbs: ["get", "list"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: greetings-reader-rolebinding
+  labels:
+    app: greetings
+subjects:
+  - kind: ServiceAccount
+    name: greetings
+roleRef:
+  kind: Role
+  name: greetings-reader-role
+  apiGroup: rbac.authorization.k8s.io
