@@ -1,29 +1,32 @@
-from flask import Flask, request
+from flask import Flask, Response
 import os
 import json
 
 from kubernetes import client, config
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 
 app = Flask(__name__)
 
 
-# request counter
-request_counter = {}
-
-HELLO_WORLD = "/"
-request_counter[HELLO_WORLD] = 0
+# Prometheus automatically exposes Counter metrics with a ``_total`` suffix.
+custom_request_count = Counter(
+    "custom_request_count",
+    "Number of requests received by endpoint",
+    ["endpoint"],
+)
 
 # Requirement 1.2.
 
 
 @app.route("/")
 def hello():
-    request_counter[HELLO_WORLD] += 1
+    custom_request_count.labels(endpoint="/").inc()
     return "Hello World!"
 
 
 @app.route("/greetings")
 def greetings():
+    custom_request_count.labels(endpoint="/greetings").inc()
     # Requirement 1.3
     greeting = os.getenv("GREETING", "GREETING env var not set.")
     return greeting
@@ -31,6 +34,7 @@ def greetings():
 
 @app.route("/listcontents")
 def listcontents():
+    custom_request_count.labels(endpoint="/listcontents").inc()
     # Requirement 1.3
     contents = os.listdir("/hostfolder")
     fp = open("/hostfolder/filenames.txt","r")
@@ -40,6 +44,7 @@ def listcontents():
 
 @app.route("/getk8sobjects")
 def get_cluster_details():
+    custom_request_count.labels(endpoint="/getk8sobjects").inc()
     # Requirement 1.3
     config.load_incluster_config()
 
@@ -86,8 +91,10 @@ def get_cluster_details():
     return obj_to_return
 
 
-# Requirement 1.4
-# Implement "/metrics" endpoint
+@app.route("/metrics")
+def metrics():
+    """Expose application metrics in Prometheus' text format."""
+    return Response(generate_latest(), content_type=CONTENT_TYPE_LATEST)
 
 
 if __name__ == "__main__":
